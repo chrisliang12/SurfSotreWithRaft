@@ -28,7 +28,7 @@ func ClientSync(client RPCClient) {
 		log.Println("Could not load meta from meta file: ", err)
 		log.Panic()
 	}
-	
+
 	//Sync local index
 	hashMap := make(map[string][]string)
 	for _, file := range files {
@@ -40,11 +40,11 @@ func ClientSync(client RPCClient) {
 		if err != nil {
 			log.Println("Error reading file in basedir: ", err)
 		}
-		
+
 		for i := 0; i < numBlocks; i++ {
 			byteSlice := make([]byte, client.BlockSize)
 			len, err := fileToRead.Read(byteSlice)
-			if err != nil{
+			if err != nil {
 				log.Println("Error reading bytes from file in basedir: ", err)
 			}
 			byteSlice = byteSlice[:len]
@@ -52,15 +52,15 @@ func ClientSync(client RPCClient) {
 			hashMap[file.Name()] = append(hashMap[file.Name()], hash)
 		}
 
-		if val, ok := localIndex[file.Name()]; ok{
-			if !reflect.DeepEqual(hashMap[file.Name()], val.BlockHashList){ //TODO: Works??
+		if val, ok := localIndex[file.Name()]; ok {
+			if !reflect.DeepEqual(hashMap[file.Name()], val.BlockHashList) { //TODO: Works??
 				localIndex[file.Name()].BlockHashList = hashMap[file.Name()]
 				localIndex[file.Name()].Version++
 			}
-		} else{
-				// New file
-				meta := FileMetaData{Filename: file.Name(), Version: 1, BlockHashList: hashMap[file.Name()]}
-				localIndex[file.Name()] = &meta
+		} else {
+			// New file
+			meta := FileMetaData{Filename: file.Name(), Version: 1, BlockHashList: hashMap[file.Name()]}
+			localIndex[file.Name()] = &meta
 		}
 	}
 
@@ -79,20 +79,20 @@ func ClientSync(client RPCClient) {
 		log.Println("Could not get blockStoreAddr: ", err)
 		log.Panic(err)
 	}
-	
+
 	remoteIndex := make(map[string]*FileMetaData)
 	if err := client.GetFileInfoMap(&remoteIndex); err != nil {
 		log.Println("Error getting index from server: ", err)
 		log.Panic(err)
 	}
-	
+
 	//Check if server has locas files, upload changes
 	for fileName, localMetaData := range localIndex {
 		if remoteMetaData, ok := remoteIndex[fileName]; ok {
 			if localMetaData.Version > remoteMetaData.Version {
 				uploadFile(client, localMetaData, blockStoreAddr)
 			}
-		} else{
+		} else {
 			uploadFile(client, localMetaData, blockStoreAddr)
 		}
 	}
@@ -105,7 +105,7 @@ func ClientSync(client RPCClient) {
 			} else if localMetaData.Version == remoteMetaData.Version && !reflect.DeepEqual(localMetaData.BlockHashList, remoteMetaData.BlockHashList) {
 				downloadFile(client, localMetaData, remoteMetaData, blockStoreAddr)
 			}
-		} else{
+		} else {
 			localIndex[filename] = &FileMetaData{}
 			localMetaData := localIndex[filename]
 			downloadFile(client, localMetaData, remoteMetaData, blockStoreAddr)
@@ -144,7 +144,7 @@ func uploadFile(client RPCClient, metaData *FileMetaData, blockStoreAddr string)
 		byteSlice = byteSlice[:len]
 
 		block := Block{BlockData: byteSlice, BlockSize: int32(len)}
-		
+
 		var succ bool
 		if err := client.PutBlock(&block, blockStoreAddr, &succ); err != nil {
 			log.Println("Failed to put block: ", err)
@@ -160,7 +160,7 @@ func uploadFile(client RPCClient, metaData *FileMetaData, blockStoreAddr string)
 	return nil
 }
 
-func downloadFile(client RPCClient, localMetaData *FileMetaData, remoteMetaData *FileMetaData, blockStoreAddr string) error{
+func downloadFile(client RPCClient, localMetaData *FileMetaData, remoteMetaData *FileMetaData, blockStoreAddr string) error {
 	path := client.BaseDir + "/" + remoteMetaData.Filename
 	file, err := os.Create(path)
 	if err != nil {
@@ -182,7 +182,7 @@ func downloadFile(client RPCClient, localMetaData *FileMetaData, remoteMetaData 
 	data := ""
 	for _, hash := range remoteMetaData.BlockHashList {
 		var block Block
-		if err := client.GetBlock(hash, blockStoreAddr, &block); err != nil{
+		if err := client.GetBlock(hash, blockStoreAddr, &block); err != nil {
 			log.Println("Failed to get block: ", err)
 		}
 

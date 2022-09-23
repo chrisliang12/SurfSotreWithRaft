@@ -48,7 +48,6 @@ func LoadRaftConfigFile(filename string) (ipList []string) {
 		}
 	}
 
-	return
 }
 
 func NewRaftServer(id int64, ips []string, blockStoreAddr string) (*RaftSurfstore, error) {
