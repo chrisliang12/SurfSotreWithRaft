@@ -1,0 +1,4 @@
+M: 3
+metadata0: localhost:9007
+metadata1: localhost:9008
+metadata2: localhost:9009
