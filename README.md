@@ -1,45 +1,108 @@
-# Instructions to extend project 4
+# Surfstore: A Fault-tolerant Cloud File Storage Service 
+This project is the project 5 for CSE 224 Graduate Networked System @ UC San Diego. In this project, we first developed a Dropbox-like cloud-based file storage system with Go and gRPC. Then, we implemented RAFT consensus algorithm with heart beating and log replication to bring fault-tolerance feature to the service. 
 
-1. Make a copy of your solution if you want to:
-```console
-mkdir proj5
-cp -r proj4/* proj5
-cd proj5
+# Surfstore without RAFT
+## Protocol buffers
+
+The starter code defines the following protocol buffer message type in `SurfStore.proto`:
+
+```
+message Block {
+    bytes blockData = 1;
+    int32 blockSize = 2;
+}
+
+message FileMetaData {
+    string filename = 1;
+    int32 version = 2;
+    repeated string blockHashList = 3;
+}
+...
 ```
 
-2. Rename all module paths from "proj4" to "proj5" (you may have more that are not shown here)
-```console
-$ grep -r proj4 ./
-cmd/SurfstoreServerExec/main.go:        "cse224/proj4/pkg/surfstore"
-cmd/SurfstoreClientExec/main.go:        "cse224/proj4/pkg/surfstore"
-go.mod:module cse224/proj4
+`SurfStore.proto` also defines the gRPC service:
+```
+service BlockStore {
+    rpc GetBlock (BlockHash) returns (Block) {}
+    rpc PutBlock (Block) returns (Success) {}
+    rpc HasBlocks (BlockHashes) returns (BlockHashes) {}
+}
+
+service MetaStore {
+    rpc GetFileInfoMap(google.protobuf.Empty) returns (FileInfoMap) {}
+    rpc UpdateFile(FileMetaData) returns (Version) {}
+    rpc GetBlockStoreAddr(google.protobuf.Empty) returns (BlockStoreAddr) {}
+}
 ```
 
-3. Copy over the given test cases
-```console
-mkdir test
-cp -r /path/to/proj5/starter-code/test/* test/
+**You need to generate the gRPC client and server interfaces from our .proto service definition.** We do this using the protocol buffer compiler protoc with a special gRPC Go plugin (The [gRPC official documentation](https://grpc.io/docs/languages/go/basics/) introduces how to install the protocol compiler plugins for Go).
+
+```shell
+protoc --proto_path=. --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative pkg/surfstore/SurfStore.proto
 ```
 
-4. Copy over the Makefile and example config
-```console
-cp /path/to/proj5/starter-code/Makefile .
-cp /path/to/proj5/starter-code/example_config.txt .
+Running this command generates the following files in the `pkg/surfstore` directory:
+- `SurfStore.pb.go`, which contains all the protocol buffer code to populate, serialize, and retrieve request and response message types.
+- `SurfStore_grpc.pb.go`, which contains the following:
+	- An interface type (or stub) for clients to call with the methods defined in the SurfStore service.
+	- An interface type for servers to implement, also with the methods defined in the SurfStore service.
+
+## Surfstore Interface
+`SurfstoreInterfaces.go` also contains interfaces for the BlockStore and the MetadataStore:
+
+```go
+type MetaStoreInterface interface {
+	// Retrieves the server's FileInfoMap
+	GetFileInfoMap(ctx context.Context, _ *emptypb.Empty) (*FileInfoMap, error)
+
+	// Update a file's fileinfo entry
+	UpdateFile(ctx context.Context, fileMetaData *FileMetaData) (*Version, error)
+
+	// Get the the BlockStore address
+	GetBlockStoreAddr(ctx context.Context, _ *emptypb.Empty) (*BlockStoreAddr, error)
+}
+
+type BlockStoreInterface interface {
+	// Get a block based on blockhash
+	GetBlock(ctx context.Context, blockHash *BlockHash) (*Block, error)
+
+	// Put a block
+	PutBlock(ctx context.Context, block *Block) (*Success, error)
+
+	// Given a list of hashes “in”, returns a list containing the
+	// subset of in that are stored in the key-value store
+	HasBlocks(ctx context.Context, blockHashesIn *BlockHashes) (*BlockHashes, error)
+}
 ```
 
-5. Copy over Raft specific files
-```console
-mkdir cmd/SurfstoreRaftServerExec
-cp /path/to/proj5/starter-code/cmd/SurfstoreRaftServerExec/main.go cmd/SurfstoreRaftServerExec/
-cp /path/to/proj5/starter-code/pkg/surfstore/Raft* pkg/surfstore/
-cp /path/to/proj5/starter-code/pkg/surfstore/SurfStore.proto pkg/surfstore/
+## Implementation
+### Server
+`BlockStore.go` provides a skeleton implementation of the `BlockStoreInterface` and `MetaStore.go` provides a skeleton implementation of the `MetaStoreInterface` 
+
+
+### Client
+`SurfstoreRPCClient.go` provides the gRPC client stub for the surfstore gRPC server.
+
+`SurfstoreUtils.go` also has the following method which **you need to implement** for the sync logic of clients:
+```go
+/*
+Implement the logic for a client syncing with the server here.
+*/
+func ClientSync(client RPCClient) {
+	panic("todo")
+}
 ```
 
-6. Copy over new client exec program and make changes to the client
-```console
-cp /path/to/proj5/starter-code/cmd/SurfstoreClientExec/main.go cmd/SurfstoreClientExec/
-```
 
+
+
+# Surfstore with RAFT
+## RAFT Consensus Algorithm
+If you are not familiar with RAFT, please see the [RAFT website](https://raft.github.io/)
+## MetaStore
+With the implementation of RAFT, MetaStore functionality is now provided by the RaftSurfstoreServer.
+
+## Client
 The client will need to take a slice of strings instead of a single address. In `pkg/surfstore/SurfstoreRPCClient.go` change the client struct to:
 
 ```go
@@ -62,28 +125,12 @@ func NewSurfstoreRPCClient(addrs []string, baseDir string, blockSize int) RPCCli
 }
 ```
 
-MetaStore functionality is now provided by the RaftSurfstoreServer, so change the MetaStore clients to RaftSurfstoreServer clients:
-
-```go
-c := NewRaftSurfstoreClient(conn)
-```
-
-And since we no longer have the `MetaStoreAddr` field, for now you can change `surfclient.MetaStoreAddr` to `surfclient.MetaStoreAddrs[0]`. You will eventually need to change this so you can find a leader, deal with server crashes, etc. 
-```go
-conn, err := grpc.Dial(surfClient.MetaStoreAddrs[0], grpc.WithInsecure())
-```
-
-
-7. Re-generate the protobuf
+## Re-generate protobuf
 ```console
 protoc --proto_path=. --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative pkg/surfstore/SurfStore.proto
 ```
 
-
-You should now be able to run `make test` and it will fail with the panic messages.
-
-
-# Makefile
+## Makefile
 
 Run BlockStore server:
 ```console
