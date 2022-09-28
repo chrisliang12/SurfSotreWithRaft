@@ -1,158 +1,135 @@
-# Surfstore: A Fault-tolerant Cloud File Storage Service 
-This project is the project 5 for CSE 224 Graduate Networked System @ UC San Diego. In this project, we first developed a Dropbox-like cloud-based file storage system with Go and gRPC. Then, we implemented RAFT consensus algorithm with heart beating and log replication to bring fault-tolerance feature to the service. 
+# SurfStore: A Fault-tolerant Cloud File Storage Service 
+## Overview
+In this project, I created a cloud-based file storage service called SurfStore. SurfStore is a networked file storage application that is based on Dropbox, and lets you sync files to and from the "cloud". I implemented the cloud service, and a client which interacts with your service with gRPC in this project. Moreover, by implementing a subset of [RAFT Consensus Algorithm](https://raft.github.io/), the fault tolerance feature is enabled on the server side.
+
+Multiple clients can concurrently connect to the SurfStore service to access a common, shared set of files. Clients accessing SurfStore “see” a consistent set of updates to files, but SurfStore does not offer any guarantees about operations across files, meaning that it does not support multi-file transactions (such as atomic move).
+
+I also build a command-line tool to let user interact with the service and play with it using command-line. For the detail, please see the How To Run section.
 
 # Surfstore without RAFT
-## Protocol buffers
+## Fundamentals
+The SurfStore service is composed of the following two services:
 
-The starter code defines the following protocol buffer message type in `SurfStore.proto`:
+- **BlockStore**: The content of each file in SurfStore is divided up into chunks, or blocks, each of which has a unique identifier. This service stores these blocks, and when given an identifier, retrieves and returns the appropriate block.
 
-```
-message Block {
-    bytes blockData = 1;
-    int32 blockSize = 2;
-}
+- **MetaStore**: he MetaStore service manages the metadata of files and the entire system. Most importantly, the MetaStore service holds the mapping of filenames to blocks. Furthermore, it should be aware of available BlockStores and map blocks to particular BlockStores. In a real deployment, a cloud file service like Dropbox or Google Drive will hold exabytes of data, and so will require 10s of thousands of BlockStores or more to hold all that data.
 
-message FileMetaData {
-    string filename = 1;
-    int32 version = 2;
-    repeated string blockHashList = 3;
-}
-...
-```
+## Blocks, hashes, and hashlists
+A file in SurfStore is broken into an ordered sequence of one or more blocks. Each block is of uniform size (defined by the command line argument), except for the last block in the file, which may be smaller (but must be at least 1 byte large). You can consider the following example:
 
-`SurfStore.proto` also defines the gRPC service:
-```
-service BlockStore {
-    rpc GetBlock (BlockHash) returns (Block) {}
-    rpc PutBlock (Block) returns (Success) {}
-    rpc HasBlocks (BlockHashes) returns (BlockHashes) {}
-}
+<p align="center">
+<img src="img/block.png" width="600">
+</p>
 
-service MetaStore {
-    rpc GetFileInfoMap(google.protobuf.Empty) returns (FileInfoMap) {}
-    rpc UpdateFile(FileMetaData) returns (Version) {}
-    rpc GetBlockStoreAddr(google.protobuf.Empty) returns (BlockStoreAddr) {}
-}
-```
+For each block, a hash value is generated using the SHA-256 hash function. So for MyFile.mp4, those hashes will be denoted as [h0, h1, h2, h3] in the same order as the blocks. This set of hash values, in order, represents the file, and is referred to as the __hashlist__.
 
-**You need to generate the gRPC client and server interfaces from our .proto service definition.** We do this using the protocol buffer compiler protoc with a special gRPC Go plugin (The [gRPC official documentation](https://grpc.io/docs/languages/go/basics/) introduces how to install the protocol compiler plugins for Go).
+## Versioning 
+In this project, we use versioning to solve the file conflict.
+Each file/filename is associated with a version, which is a monotonically increasing positive integer. The version is incremented any time the file is created, modified, or deleted. The purpose of the version is so that clients can detect when they have an out-of-date view of the file hierarchy. 
 
-```shell
-protoc --proto_path=. --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative pkg/surfstore/SurfStore.proto
-```
+SurfStore only records modifications to files it the version is **exactly** one larger than the currently recorded version. 
 
-Running this command generates the following files in the `pkg/surfstore` directory:
-- `SurfStore.pb.go`, which contains all the protocol buffer code to populate, serialize, and retrieve request and response message types.
-- `SurfStore_grpc.pb.go`, which contains the following:
-	- An interface type (or stub) for clients to call with the methods defined in the SurfStore service.
-	- An interface type for servers to implement, also with the methods defined in the SurfStore service.
-
-## Surfstore Interface
-`SurfstoreInterfaces.go` also contains interfaces for the BlockStore and the MetadataStore:
-
-```go
-type MetaStoreInterface interface {
-	// Retrieves the server's FileInfoMap
-	GetFileInfoMap(ctx context.Context, _ *emptypb.Empty) (*FileInfoMap, error)
-
-	// Update a file's fileinfo entry
-	UpdateFile(ctx context.Context, fileMetaData *FileMetaData) (*Version, error)
-
-	// Get the the BlockStore address
-	GetBlockStoreAddr(ctx context.Context, _ *emptypb.Empty) (*BlockStoreAddr, error)
-}
-
-type BlockStoreInterface interface {
-	// Get a block based on blockhash
-	GetBlock(ctx context.Context, blockHash *BlockHash) (*Block, error)
-
-	// Put a block
-	PutBlock(ctx context.Context, block *Block) (*Success, error)
-
-	// Given a list of hashes “in”, returns a list containing the
-	// subset of in that are stored in the key-value store
-	HasBlocks(ctx context.Context, blockHashesIn *BlockHashes) (*BlockHashes, error)
-}
-```
-
-## Implementation
-### Server
-`BlockStore.go` provides a skeleton implementation of the `BlockStoreInterface` and `MetaStore.go` provides a skeleton implementation of the `MetaStoreInterface` 
-
-
+## Usage
+To run the program and play with it, please enter the folder p4-SurfstoreWithoutRaft and follow the following instructions.
 ### Client
-`SurfstoreRPCClient.go` provides the gRPC client stub for the surfstore gRPC server.
+For this project, clients will sync the contents of a “base directory” by:
 
-`SurfstoreUtils.go` also has the following method which **you need to implement** for the sync logic of clients:
-```go
-/*
-Implement the logic for a client syncing with the server here.
-*/
-func ClientSync(client RPCClient) {
-	panic("todo")
-}
-```
+<p align="center">
+<img src="img/client-usage.png" width="600">
+</p>
 
-
-
-
-# Surfstore with RAFT
-## RAFT Consensus Algorithm
-If you are not familiar with RAFT, please see the [RAFT website](https://raft.github.io/)
-## MetaStore
-With the implementation of RAFT, MetaStore functionality is now provided by the RaftSurfstoreServer.
-
-## Client
-The client will need to take a slice of strings instead of a single address. In `pkg/surfstore/SurfstoreRPCClient.go` change the client struct to:
-
-```go
-type RPCClient struct {
-        MetaStoreAddrs []string
-        BaseDir       string
-        BlockSize     int
-}
-```
-
-And change the `NewSurfstoreRPCClient` function to:
-
-```go
-func NewSurfstoreRPCClient(addrs []string, baseDir string, blockSize int) RPCClient {
-        return RPCClient{
-                MetaStoreAddrs: addrs,
-                BaseDir:       baseDir,
-                BlockSize:     blockSize,
-        }
-}
-```
-
-## Re-generate protobuf
+Command:
 ```console
-protoc --proto_path=. --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative pkg/surfstore/SurfStore.proto
+go run cmd/SurfstoreClientExec/main.go -d <meta_addr:port> <base_dir> <block_size>
 ```
 
-## Makefile
+### Server
+As mentioned earlier, Surfstore is composed of two services: MetaStore and BlockStore. In this project, the location of the MetaStore and BlockStore shouldn’t matter. In other words, the MetaStore and BlockStore could be serviced by a single server process, separate server processes on the same host, or separate server processes on different hosts. Regardless of where these services reside, the functionality should be the same.
 
-Run BlockStore server:
+### Starting a Server
+You can start a server by:
+
+<p align="center">
+<img src="img/startserver.png" width="600">
+</p>
+
+Command:
 ```console
-$ make run-blockstore
+go run cmd/SurfstoreServerExec/main.go -s <service_type> -p <port> -l -d (blockstoreAddr*)
 ```
 
-Run RaftSurfstore server:
-```console
-$ make IDX=0 run-raft
-```
+You can also run both server (MetaStore and BlockStore) in a single process
 
-Test:
-```console
-$ make test
-```
+<p align="center">
+<img src="img/startbothserver.png" width="600">
+</p>
 
-Specific Test:
-```console
-$ make TEST_REGEX=Test specific-test
-```
+Example Command:
+    ```console
+    go run cmd/SurfstoreServerExec/main.go -s both -p 8081 -l localhost:8081
+    ```
 
-Clean:
-```console
-$ make clean
-```
+<br>
+
+# An Example to Run the Program Locally with Command-Line
+1. In the root directory of this project, we should first enter the "p4-SurfstoreWithOutRaft" directory.
+    ```
+    cd p4-SurfstoreWithoutRaft/
+    ```
+<br>
+
+2. Then we can create two folders, for example, dataA and dataB here.
+    ```
+    mkdir dataA dataB
+    ```
+<br>
+
+3. Now we can drag some files into the dataA or dataB folder (I put a png file (block.png) in the dataA folder, for example)
+
+<p align="center">
+    <img src="img/test.png" width="600">
+</p>
+<br>
+
+4. In the terminal, we can use the following command to start both MetaStore and BlockStore servers.
+    ```
+    make run-both
+    ```
+<p align="center">
+<img src="img/make-run-both.png" width="600">
+</p>
+<br>
+
+5. Then in another terminal (recommand using `tmux` here), we can run the main.go for Client Execution. We first run the client with the base directory as dataA.
+    ```
+    go run cmd/SurfstoreClientExec/main.go -d localhost:8081  dataA/ 1024
+    ```
+<p align="center">
+<img src="img/runclientdataA.png" width="600">
+</p>
+<br>
+
+6. If we look at the dataA folder, there should be a file called index.txt which basically store the meta data of the file.
+
+<p align="center">
+<img src="img/llDataA.png" width="600">
+<img src="img/insideIndex.png" width="600">
+</p>
+
+<br>
+
+7. Then we re-run the command with the base directory as dataB this time.
+    ```
+    go run cmd/SurfstoreClientExec/main.go -d localhost:8081  dataB/ 1024
+    ```
+<br>
+
+8. We can see that the png file is synced from dataA to dataB
+<p align="center">
+<img src="img/lldataB.png" width="600">
+</p>
+
+# SurfStore with RAFT
+## Overview
+
+## Usage

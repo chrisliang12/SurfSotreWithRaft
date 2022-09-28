@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+option go_package = "cse224/proj4/pkg/surfstore";
+
+package surfstore;
+
+import "google/protobuf/empty.proto";
+
+service BlockStore {
+    rpc GetBlock (BlockHash) returns (Block) {}
+
+    rpc PutBlock (Block) returns (Success) {}
+
+    rpc HasBlocks (BlockHashes) returns (BlockHashes) {}
+}
+
+service MetaStore {
+    rpc GetFileInfoMap(google.protobuf.Empty) returns (FileInfoMap) {}
+
+    rpc UpdateFile(FileMetaData) returns (Version) {}
+
+    rpc GetBlockStoreAddr(google.protobuf.Empty) returns (BlockStoreAddr) {}
+}
+
+message BlockHash {
+    string hash = 1;
+}
+
+message BlockHashes {
+    repeated string hashes = 1;
+}
+
+message Block {
+    bytes blockData = 1;
+    int32 blockSize = 2;
+}
+
+message Success {
+    bool flag = 1;
+}
+
+message FileMetaData {
+    string filename = 1;
+    int32 version = 2;
+    repeated string blockHashList = 3;
+}
+
+message FileInfoMap {
+    map<string, FileMetaData> fileInfoMap = 1;
+}
+
+message Version {
+    int32 version = 1;
+}
+
+message BlockStoreAddr {
+    string addr = 1;
+}
