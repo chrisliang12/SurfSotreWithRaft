@@ -1,10 +1,10 @@
 # SurfStore: A Fault-tolerant Cloud File Storage Service 
 ## Overview
-In this project, I created a cloud-based file storage service called SurfStore. SurfStore is a networked file storage application that is based on Dropbox, and lets you sync files to and from the "cloud". I implemented the cloud service, and a client which interacts with your service with gRPC in this project. Moreover, by implementing a subset of [RAFT Consensus Algorithm](https://raft.github.io/), the fault tolerance feature is enabled on the server side.
+SurfStore is a networked file storage application that is based on Dropbox, and lets you sync files to and from the "cloud". SurfStore is a key-value file storage system, which includes a server storing file metadata (MetaStore), a server storing real file data (BlockStore), and a client which interacts with the service with gRPC. Moreover, by implementing a subset of [RAFT Consensus Algorithm](https://raft.github.io/), the service becomes fault-tolerant.
 
 Multiple clients can concurrently connect to the SurfStore service to access a common, shared set of files. Clients accessing SurfStore “see” a consistent set of updates to files, but SurfStore does not offer any guarantees about operations across files, meaning that it does not support multi-file transactions (such as atomic move).
 
-I also build a command-line tool to let user interact with the service and play with it using command-line. For the detail, please see the How To Run section.
+A command-line tool is also provided to let users interact with the service and play with it easily. For the detail, please see the [Usage](#an-example-to-run-the-program-locally) section.
 
 # Surfstore without RAFT
 ## Fundamentals
@@ -72,7 +72,7 @@ Example Command:
 
 <br>
 
-# An Example to Run the Program Locally with Command-Line
+# An Example to Run the Program locally
 1. In the root directory of this project, we should first enter the "p4-SurfstoreWithOutRaft" directory.
     ```shell
     > cd p4-SurfstoreWithoutRaft/
