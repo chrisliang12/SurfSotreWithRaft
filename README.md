@@ -65,9 +65,10 @@ You can also run both server (MetaStore and BlockStore) in a single process
 </p>
 
 Example Command:
-    ```console
-    go run cmd/SurfstoreServerExec/main.go -s both -p 8081 -l localhost:8081
-    ```
+
+```console
+go run cmd/SurfstoreServerExec/main.go -s both -p 8081 -l localhost:8081
+```
 
 <br>
 
