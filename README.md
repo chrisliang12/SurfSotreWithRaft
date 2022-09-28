@@ -1,4 +1,4 @@
-# SurfStore: A Fault-tolerant Cloud File Storage Service 
+# SurfStore: A Cloud-based Fault-tolerant File Storage Service 
 <p align="center">
 <img src="img/Client-Sync.png" width="800">
 </p>
