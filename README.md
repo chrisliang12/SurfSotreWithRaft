@@ -2,7 +2,8 @@
 <p align="center">
 <img src="img/Client-Sync.png" width="800">
 </p>
-## Overview
+
+# Overview
 SurfStore is a networked file storage application that is modeled after Dropbox, and lets you sync files to and from the "cloud". The service is built with a key-value file storage system including a MetaStore server storing file metadata and a BlockStore server storing real file data, and a client which interacts with the service with gRPC. Moreover, through the implementation of a subset of [RAFT Consensus Algorithm](https://raft.github.io/), the service becomes fault-tolerant.
 
 Multiple clients can concurrently connect to the SurfStore service to access a common, shared set of files. Clients accessing SurfStore “see” a consistent set of updates to files, but SurfStore does not offer any guarantees about operations across files, meaning that it does not support multi-file transactions (such as atomic move).
