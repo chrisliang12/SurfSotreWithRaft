@@ -55,6 +55,12 @@ func NewRaftServer(id int64, ips []string, blockStoreAddr string) (*RaftSurfstor
 
 	isCrashedMutex := &sync.RWMutex{}
 
+	// set server with id = 0 as the default leader
+	isLead := false
+	if id == 0 {
+		isLead = true
+	}
+
 	server := RaftSurfstore{
 		// TODO initialize any fields you add here
 		// New entries
@@ -64,7 +70,7 @@ func NewRaftServer(id int64, ips []string, blockStoreAddr string) (*RaftSurfstor
 		commitIndex: -1,
 		lastApplied: -1,
 
-		isLeader:       false,
+		isLeader:       isLead,
 		term:           0,
 		metaStore:      NewMetaStore(blockStoreAddr),
 		log:            make([]*UpdateOperation, 0),
