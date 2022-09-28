@@ -40,7 +40,7 @@ For this project, clients will sync the contents of a “base directory” by:
 
 Command:
 ```shell
-go run cmd/SurfstoreClientExec/main.go -d <meta_addr:port> <base_dir> <block_size>
+> go run cmd/SurfstoreClientExec/main.go -d <meta_addr:port> <base_dir> <block_size>
 ```
 
 ### Server
@@ -55,7 +55,7 @@ You can start a server by:
 
 Command:
 ```shell
-go run cmd/SurfstoreServerExec/main.go -s <service_type> -p <port> -l -d (blockstoreAddr*)
+> go run cmd/SurfstoreServerExec/main.go -s <service_type> -p <port> -l -d (blockstoreAddr*)
 ```
 
 You can also run both server (MetaStore and BlockStore) in a single process
@@ -67,7 +67,7 @@ You can also run both server (MetaStore and BlockStore) in a single process
 Example Command:
 
 ```shell
-go run cmd/SurfstoreServerExec/main.go -s both -p 8081 -l localhost:8081
+> go run cmd/SurfstoreServerExec/main.go -s both -p 8081 -l localhost:8081
 ```
 
 <br>
@@ -75,13 +75,13 @@ go run cmd/SurfstoreServerExec/main.go -s both -p 8081 -l localhost:8081
 # An Example to Run the Program Locally with Command-Line
 1. In the root directory of this project, we should first enter the "p4-SurfstoreWithOutRaft" directory.
     ```shell
-    cd p4-SurfstoreWithoutRaft/
+    > cd p4-SurfstoreWithoutRaft/
     ```
 <br>
 
 2. Then we can create two folders, for example, dataA and dataB here.
     ```shell
-    mkdir dataA dataB
+    > mkdir dataA dataB
     ```
 <br>
 
@@ -94,7 +94,7 @@ go run cmd/SurfstoreServerExec/main.go -s both -p 8081 -l localhost:8081
 
 4. In the terminal, we can use the following command to start both MetaStore and BlockStore servers.
     ```shell
-    make run-both
+    > make run-both
     ```
 <p align="center">
 <img src="img/make-run-both.png" width="600">
@@ -103,7 +103,7 @@ go run cmd/SurfstoreServerExec/main.go -s both -p 8081 -l localhost:8081
 
 5. Then in another terminal (recommand using `tmux` here), we can run the main.go for Client Execution. We first run the client with the base directory as dataA.
     ```shell
-    go run cmd/SurfstoreClientExec/main.go -d localhost:8081  dataA/ 1024
+    > go run cmd/SurfstoreClientExec/main.go -d localhost:8081  dataA/ 1024
     ```
 <p align="center">
 <img src="img/runclientdataA.png" width="600">
@@ -121,7 +121,7 @@ go run cmd/SurfstoreServerExec/main.go -s both -p 8081 -l localhost:8081
 
 7. Then we re-run the command with the base directory as dataB this time.
     ```shell
-    go run cmd/SurfstoreClientExec/main.go -d localhost:8081  dataB/ 1024
+    > go run cmd/SurfstoreClientExec/main.go -d localhost:8081  dataB/ 1024
     ```
 <br>
 
