@@ -8,7 +8,7 @@ SurfStore is a networked file storage application that is modeled after Dropbox,
 
 Multiple clients can concurrently connect to the SurfStore service to access a common, shared set of files. Clients accessing SurfStore “see” a consistent set of updates to files, but SurfStore does not offer any guarantees about operations across files, meaning that it does not support multi-file transactions (such as atomic move).
 
-A command-line tool is also provided to let users interact with the service and play with it easily. For the detail, please see the [Usage](#an-example-to-run-the-program-locally) section.
+A command-line tool is also provided to let users interact with the service and play with it easily. For the detail, please see the [Usage](#run-locally-with-command-line) section.
 
 # Surfstore without RAFT
 ## Fundamentals
