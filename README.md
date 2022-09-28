@@ -72,7 +72,7 @@ Example Command:
 
 <br>
 
-# An Example to Run the Program locally
+# Run Locally with Command-Line
 1. In the root directory of this project, we should first enter the "p4-SurfstoreWithOutRaft" directory.
     ```shell
     > cd p4-SurfstoreWithoutRaft/
