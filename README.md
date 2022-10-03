@@ -35,22 +35,20 @@ Each file/filename is associated with a version, which is a monotonically increa
 
 SurfStore only records modifications to files it the version is **exactly** one larger than the currently recorded version. 
 
-<br>
-
 # RAFT
-Without implementing the RAFT algorithm, our MetaStore server cannot provide a fault-tolerant service. This is simply because we only have one server which stores all the meta data of the files. Through implementing the RAFT consensus algorithm, we will have multiple servers in which the meta data are stored. Based on the mechanism of RAFT, as long as most of the servers are alive, then our service can operate normally. For example, if we have 5 MetaStore servers, then we only need 3 of them being alive to let the SurfStore operates normally. For more information about RAFT, please visit the [RAFT website](https://raft.github.io/).
+Without implementing the RAFT algorithm, our MetaStore server cannot provide a fault-tolerant service. This is simply because we only have one server which stores all the metadata of the files. By implementing the RAFT consensus algorithm, we will have multiple servers in which the metadata is stored. Based on the mechanism of RAFT, as long as most of the servers are alive, then our service can operate normally. For example, if we have 5 MetaStore servers, then we only need 3 of them to be alive to let the SurfStore operates normally. For more information about RAFT, please visit the [RAFT website](https://raft.github.io/).
 
-In this project, only a subset of RAFT algorithms are implemented. More specifically, we did not implement the log compaction and leader election algorithms. For the leader election, we instead created a `setLeader` API. By calling the `setLeader` API, we can simulate the leader election process in the real RAFT algorithm. 
+In this project, only a subset of RAFT algorithms is implemented. More specifically, we did not implement the log compaction and leader election algorithms. For the leader election, we instead created a `setLeader` API. By calling the `setLeader` API, we can simulate the leader election process in the real RAFT algorithm. 
 
 # Requirements to Run
 ## Go
-To run the projects, you first need to install go in your computer. If you are using HomeBrew, just simply run the following command in the terminal:
+To run the projects, you first need to install go on your computer. If you are using HomeBrew, just simply run the following command in the terminal:
 ```shell
 > brew install go
 ```
 
 ## Protocol buffer compiler
-You can also use HomeBrew to install the Protobuf. If you are in a different environment, please check the this [website](https://grpc.io/docs/protoc-installation/) for more detail.
+You can also use HomeBrew to install the Protobuf. If you are in a different environment, please check this [website](https://grpc.io/docs/protoc-installation/) for more detail.
 ```shell
 > brew install protobuf
 ```
@@ -68,7 +66,7 @@ You can also use HomeBrew to install the Protobuf. If you are in a different env
 For more details, check out the gRPC [Website](https://grpc.io/docs/languages/go/quickstart/#prerequisites).
 
 # Usage
-For this project, you can both ran the program with test code or with command line. However, I recommend the first option because only through the test program we can really experience the RAFT service since some functionality of RAFT are provided as APIs. You need to call them in your test code. However, this does not means we cannot ran the program in terminal. In this case, the program will simply select a default node as the leader node and run as normally, but then this is not a real fault-tolerant service.
+For this project, you can run the program with test code or with the command line. However, I recommend the first option because only through the test program we can really experience the RAFT service since some functionality of RAFT is provided as APIs. You need to call them in your test code. However, this does not mean we cannot run the program in the terminal. In this case, the program will simply select a default node as the leader node and run as normal, but then this is not a real fault-tolerant service.
 
 ## Re-generate the Protobuf
 You can use the following command to re-generate the protobuf (in the root directory):
@@ -77,7 +75,7 @@ You can use the following command to re-generate the protobuf (in the root direc
 ```
 
 ## Unit-Test
-In this project, you can find some test code I have already written. You can simply run them in the root directory by the following:
+In this project, you can find some test code I have already written. You can simply run them in the root directory by the following command:
 ```shell
 > make test
 ```
@@ -123,7 +121,7 @@ Of course, you can also choose to run the program with the command-line tool. Ju
     > make IDX=2 run-raft // in a different terminal
     ```
 
-6. Then we can run the client to sync the files in the base directory. To do this, use the following command:
+6. Then we can run the client to sync the files in the specified base directory. To do this, use the following command:
     ```shell
     > go run cmd/SurfstoreClientExec/main.go -d -f <config file> <base directory> <block size>
     ```
@@ -131,7 +129,7 @@ Of course, you can also choose to run the program with the command-line tool. Ju
     ```shell
     > go run cmd/SurfstoreClientExec/main.go -d -f ./example_config.txt ./dataA 1024
     ```
-    After running you should see an `index.txt` file appears in the dataA folder. This is a file which records the local meta data in the directory.
+    After running you should see an `index.txt` file appear in the dataA folder. This is a file that records the local metadata.
 <p align="center">
 <img src="img/dataA.png" width="600">
 <img src="img/indextxt.png" width="600">
@@ -139,13 +137,13 @@ Of course, you can also choose to run the program with the command-line tool. Ju
 
 <br>
 
-1. Then we re-run the command with the base directory as dataB this time.
+7. Then we re-run the command with the base directory as dataB this time.
     ```shell
     > go run cmd/SurfstoreClientExec/main.go -d -f ./example_config.txt ./dataB 1024
     ```
 <br>
 
-8. We can see that the png file is synced from dataA to dataB
+8. We can see that the png file is synced from dataA folder to dataB folder
 <p align="center">
 <img src="img/dataB.png" width="600">
 </p>
